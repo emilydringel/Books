@@ -13,10 +13,17 @@ public class Api {
 
     public static final void main(String[] args){
         try{
-          GoogleBook skippingChristmas = new GoogleBook("zyTCAlFPjgYC");
-          System.out.println("femPct: "+skippingChristmas.getFemPct());
+          GoogleBook myBook = new GoogleBook("zyTCAlFPjgYC");
+          System.out.println("Book: " + myBook.getName());
+          double percent = myBook.getFemalePercent();
+          if(percent==-1){
+            System.out.println("No information for this book. Sorry.");
+          }else{
+            System.out.println("Percentage of Names Mentioned that are Female: "+Double.toString(percent*100).substring(0,4)+"%");
+            System.out.println("Male names mentioned: "+myBook.getMaleCount()+ "; Female names mentioned: "+myBook.getFemaleCount());
+          }
         }catch(Exception E){
-          System.out.println(E);
+          System.out.println("Internal Error: " + E);
         }
     }
 

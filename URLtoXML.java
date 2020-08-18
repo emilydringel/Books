@@ -36,7 +36,6 @@ public class URLtoXML{
       }
       reader.close();
       return xmlString;
-
   }
 
 }

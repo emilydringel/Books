@@ -8,32 +8,39 @@ public class GoogleBook{
   private String googleID;
   private String volumeXML;
   //add to in parse
+  private String bookName;
   private String description;
-  private String categories;
   //add to in parse abstracts
   private HashMap<String,Integer> names;
   //add to in parse names
-  private int females;
-  private int males;
+  private int females = 0;
+  private int males = 0;
   private double femPct;
 
   URLtoXML transformer;
 
-  public GoogleBook(String id){
-    try{
-      googleID = id;
-      transformer = new URLtoXML();
-      volumeXML = idToXML();
-      findDescriptionAndCategories();
-      getNames();
-      parseNames();
-    }catch(Exception E){
-      System.out.println("An error occurred");
-      System.out.println(E);
-    }
+  public GoogleBook(String id) throws MalformedURLException, IOException{
+    googleID = id;
+    transformer = new URLtoXML();
+    volumeXML = idToXML();
+    parseXML();
+    getNames();
+    parseNames();
   }
 
-  public double getFemPct(){
+  public String getName(){
+    return bookName;
+  }
+
+  public int getFemaleCount(){
+    return females;
+  }
+
+  public int getMaleCount(){
+    return males;
+  }
+
+  public double getFemalePercent(){
     return femPct;
   }
 
@@ -43,20 +50,19 @@ public class GoogleBook{
     return transformer.urlToXML(url);
   }
 
-  private void findDescriptionAndCategories(){
+  private void parseXML(){
     int counter = 0;
     while(counter<volumeXML.length()){
       if(counter+11>volumeXML.length()){
         break;
       }
-      if(volumeXML.substring(counter, counter+10).equals("categories")){
-        counter = counter+13;
-        categories = "";
-        while(!volumeXML.substring(counter, counter + 11).equals("averageRati")){
-          categories += Character.toString(volumeXML.charAt(counter));
+      if(volumeXML.substring(counter, counter+6).equals("\"title")){
+        counter = counter+8;
+        bookName = "";
+        while(!volumeXML.substring(counter, counter + 2).equals("\",")){
+          bookName += Character.toString(volumeXML.charAt(counter));
           counter++;
         }
-        break;
       }else if(volumeXML.substring(counter, counter+11).equals("description")){
         counter = counter+14;
         description = "";
@@ -64,6 +70,7 @@ public class GoogleBook{
           description += Character.toString(volumeXML.charAt(counter));
           counter++;
         }
+        break;
       }else{
         counter++;
       }
@@ -129,7 +136,7 @@ public class GoogleBook{
       }
       base = "https://api.genderize.io?name=";
     }if(females+males>0){
-      femPct = females/(females+males);
+      femPct = (double) females/(females+males);
     }else{
       femPct = -1;
     }
