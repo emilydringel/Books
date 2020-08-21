@@ -4,32 +4,41 @@ import java.io.IOException;
 
 public class GoogleBook{
 
+  //INCLUDE AUTHOR AT SOME POINT
   //create in constructor
   private String googleID;
   private String volumeXML;
   //add to in parse
   private String bookName;
+  private String authors;
   private String description;
   //add to in parse abstracts
   private HashMap<String,Integer> names;
   //add to in parse names
   private int females = 0;
   private int males = 0;
-  private double femPct;
+  private double femPct = -1;
 
   URLtoXML transformer;
 
-  public GoogleBook(String id) throws MalformedURLException, IOException{
-    googleID = id;
-    transformer = new URLtoXML();
-    volumeXML = idToXML();
+  public GoogleBook(String myXML, URLtoXML myurltoxml) throws MalformedURLException, IOException{
+    transformer = myurltoxml;
+    volumeXML = myXML;
     parseXML();
+    if(description==null){
+      femPct = -1;
+      return;
+    }
     getNames();
     parseNames();
   }
 
   public String getName(){
     return bookName;
+  }
+
+  public String getAuthors(){
+    return authors;
   }
 
   public int getFemaleCount(){
@@ -44,10 +53,8 @@ public class GoogleBook{
     return femPct;
   }
 
-  private String idToXML() throws MalformedURLException, IOException{
-    String url = "https://www.googleapis.com/books/v1/volumes/";
-    url += googleID;
-    return transformer.urlToXML(url);
+  public String getDescription(){
+    return description;
   }
 
   private void parseXML(){
@@ -55,18 +62,32 @@ public class GoogleBook{
     while(counter<volumeXML.length()){
       if(counter+11>volumeXML.length()){
         break;
-      }
-      if(volumeXML.substring(counter, counter+6).equals("\"title")){
-        counter = counter+8;
+      }if(volumeXML.substring(counter, counter+5).equals("\"id\":")){
+        counter = counter+7;
+        googleID = "";
+        while(!volumeXML.substring(counter, counter + 2).equals("\",")){
+          googleID += Character.toString(volumeXML.charAt(counter));
+          counter++;
+        }
+      }else if(volumeXML.substring(counter, counter+6).equals("\"title")){
+        counter = counter+10;
         bookName = "";
         while(!volumeXML.substring(counter, counter + 2).equals("\",")){
           bookName += Character.toString(volumeXML.charAt(counter));
           counter++;
         }
-      }else if(volumeXML.substring(counter, counter+11).equals("description")){
+      }else if(volumeXML.substring(counter, counter+10).equals("\"authors\":")){
+        counter = counter+11;
+        String unparsedAuthors = "";
+        while(!volumeXML.substring(counter, counter + 9).equals("\"publishe")){
+          unparsedAuthors += Character.toString(volumeXML.charAt(counter));
+          counter++;
+        }
+        authors = parseAuthors(unparsedAuthors);
+      }else if(volumeXML.substring(counter, counter+10).equals("descriptio")){
         counter = counter+14;
         description = "";
-        while(!volumeXML.substring(counter, counter + 11).equals("industryIde")){
+        while(!volumeXML.substring(counter, counter + 10).equals("readingMod")){
           description += Character.toString(volumeXML.charAt(counter));
           counter++;
         }
@@ -95,6 +116,7 @@ public class GoogleBook{
       }else if(thisCap){
         names.put(word, 1);
       }
+      genderAWord(word);
     }
   }
 
@@ -139,6 +161,36 @@ public class GoogleBook{
       femPct = (double) females/(females+males);
     }else{
       femPct = -1;
+    }
+  }
+
+  private static String parseAuthors(String unparsed){
+    String parsed = "";
+    boolean inQuotes = false;
+    for(int i=0; i<unparsed.length(); i++){
+      if(unparsed.charAt(i)=='"'){
+        inQuotes = !inQuotes;
+        if(!inQuotes){
+          parsed += ", ";
+        }
+      }else if(inQuotes){
+        parsed += Character.toString(unparsed.charAt(i));
+      }
+    }
+    return parsed.substring(0, parsed.length()-2);
+  }
+
+  private void genderAWord(String word){
+    if(word.equals("boy")||word.equals("man")||word.equals("father")||
+      word.equals("son")||word.equals("uncle")||word.equals("husband")||
+      word.equals("grandfather")||word.equals("he")||word.equals("him")||
+      word.equals("his")||word.equals("grandson")){
+        males++;
+    }else if(word.equals("girl")||word.equals("woman")||word.equals("mother")||
+      word.equals("daughter")||word.equals("aunt")||word.equals("wife")||
+      word.equals("grandmother")||word.equals("she")||word.equals("her")||
+      word.equals("hers")||word.equals("granddaughter")){
+        females++;
     }
   }
 }
